@@ -1,0 +1,72 @@
+Bontas Carol Sebastian 321CA
+
+IMPORTANT: Tema este facuta pe versiunea veche de checker( cel de dinainte de update-ul de pe 5 ianuarie, adica eroii care se omoara RECIPROC NU primesc XP).
+
+Reparatii de la etapa 1:
+
+In main, mutarile se fac cu ajutorul metodei movePhase, bataliile se fac cu ajutorul metodei battlePhase iar mdificarile aduse de ingeri se afla in metoda angelPhase
+
+In BATTLEPHASE la inceput se aplica damage over time al efectelor negative asupra unui erou (daca exista) , apoi se aplica strategiile( vezi 1* pentru Strategy Pattern) , apoi se reduce durata efectelor negative cu o runda.
+
+Pentru alegerea partenerului de lupta al eroului I , mai intai se cauta in printre eroii vii de la 0 I-1 pentru a vedea daca nu a luptat deja I. Daca nu a gasit atunci se cauta de la I+1 pana la sfarsit un erou cu care se poate lupta.
+
+Se verifica daca daca I sau J dau level up la sfarsitul rundei in cazul in care nu se omoara reciproc.
+
+
+
+In ANGELPHASE se verifica daca un inger se afla pe aceasi pozitie cu un erou. Ingerii sunt organizati intr-un ArrayList<ArrayList<Angels>> iar fiecare element din primul ArrayList reprezinta ArrayList-ul cu ingeri dintr-o runda.
+
+FACTORY PATTERN(clasa ModifyFactory care este si SINGLETON) pentru modificatori creaza 4 structuri de date de tip ArrayList<HashMap<String,Float> in care pe prima pozitie(0) un HasMap de tip (nume erou,coefiecent) cu  modificatorii pentru prima abilitate,
+analog pentru a doua pozitie(1) pentru a doua abilitate, ia a treia pozitie(2) are modificatorul de teren.Clasa prezinta 4 metode ce returneaza o structura de acest gen pentru fiecare dintr eroi.
+Clasa Knight are un camp numai al lui numit firstVisit ce nu permite scaderea coeficientilor daca acestia sunt initial 1f ( +0%). Daca se intampla ca modificatorii sa creasca atunci firstVisit devine true deci in viitor coeficientii pot fi
+scazuti.
+
+FACTORY PATERN pentru campioni este realizat de ChampionFactory ce preia o structura de date cu coeficienti de la ModifyFacory, ii face DEEP COPY si creaza un erou ce il pune in ArrayList<Champions>.
+
+
+
+VISITOR PATTERN pentru ingeri: Fiecare erou (Knight , Pyromancer, Wizard, Rogue ) are metoda acceptAngel(Angel angel) ce apeleaza metoda angel.interactWith(this)  (this fiind de tip Champion)
+
+Fiecare inger are 4 metode interactWith pentru cei 4 eroi . Toti ingerii sunt mosteniti din clasa abstracta Angel. Inainte de a aplica bonusurile, se testeaza daca jucatorul poate primi ajutorul ingerilor.
+Daca este in viata poate interactiona cu toti inafara de Spawner iar daca are viata=0 poate interactiona cu Spawner.
+Metoda changeModifiers(float bonus) scade sau creste modicatorii pe care ii are un erou
+
+1* STRATEGY PATTERN : strategiile mostenesc clasa abstracta Strategy. Toate strategiile ce scad din viata eroului se numesc <Tip_Erou>Offense in timp ce cele ce cresc viata eroului sunt <Tip_Erou>Defense.
+Pentru modificarea coeficientilor strategiile folosesc metoda changeModifiers(float bonus) din clasa Strategy iar metoda apply aplica strategia respectiva.
+Fiecare clasa ce mosteneste Champion prezinta un camp strategy . In BATTLEPHASE se alege strategia folosind metoda suprascrisa de fiecare tip de erou, numita chooseStrategy ce alege strategia iar apoi cu metoda applyStrategy se apeleaza 
+strategy.apply
+
+OBSERVER PATTERN: Marele Magician(subiectul) prezinta o lista cu observatori de tip Champions si o lista de  observatori de tip Angels. Atunci cand un campion omoara un altul se notifica Marele Magician prin metoda notifyKillUpdates
+, metoda apeleaza subject.updateChampions(subject este camp din clasa Champion ce leaga fiecare observator de subiectul la care raporteaza modificarile) din clasa GreatMagician( care e SINGLETON )
+ si care apeleaza la randul ei inapoi in clasa Champion prin metoda update.
+  
+                                                   notifyKillUpdates==>updateChampionsKills==>update -----------
+                                                         |                          |                          |
+                                                         V                          V                          V
+                                                       Champions(Observer)----> GreatMagician(Subject)--->Champions(Observer)   
+
+Atunci cand cineva da level up se apeleaza metoda notifyLevelUpUpdates din Champion ce apeleaza subject.updateChampionLevels si care apeleaza metoda updateLevels.
+
+                                                   notifyLevelUpUpdats==>updateChampionsLevels==>updateLevels---
+                                                         |                          |                          |
+                                                         V                          V                          V
+                                                   Champions(Observer)----> GreatMagician(Subject)--->Champions(Observer)   
+
+Pentru aparitia unui inger se apeleaza metoda notifySpawnUpdates==>updateAngelSpawns==>updateSpawn--------------
+                                                         |                          |                          |
+                                                         V                          V                          V
+                                               Angel(Observer)--->GreatMagician(Subject)--->Angel(Observer)
+
+Pentru interactiunule cu ingeri se apeleaza metoda notifyInteraction==>updateAngelInteraction==>updateInteraction
+                                                    Angel(Observer)--->GreatMagician(Subject)--->Angel(Observer)
+
+GreatMagician prezinta un camp "notifications" de tip ArrayList<String> ce prezinta notificarile aparute. Toate metodele update,updateLevels,updateSpawn,updateInteraction se ocupa cu adaugarea in "notifications" cu outpurile caracteristice
+fiecarei situatii.
+
+CONCLUZIE OBSERVER: GreatMagician primeste notificari de la Observatori, iar in functie de notificare deleaga Observatorul respectiv sa adauge aceasta situatie in fluxul general de notificari.
+   GREATMAGICIAN reprezinta doar un intermediar in schimbul acesta de informatii, el doar observa si coordoneaza unde sa se duca informatia.
+
+
+
+
+
